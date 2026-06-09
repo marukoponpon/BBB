@@ -14,7 +14,7 @@
     }
   },
 
-  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postCreateCommand": "bash ${containerWorkspaceFolder}/.devcontainer/setup.sh",
 
   "customizations": {
     "vscode": {

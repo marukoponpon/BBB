@@ -6,6 +6,18 @@ log() {
   echo "==> $*"
 }
 
+# このsetup.sh自身の場所からリポジトリルートを推定する。
+# /workspaces/xxx のような固定パスは使わない。
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
+export DEBIAN_FRONTEND=noninteractive
+
+# ユーザー領域のnpm/pipxを使う。
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:/usr/local/bin:$PATH"
+
+mkdir -p "$HOME/.npm-global" "$HOME/.local/bin" "$HOME/bin"
+
 append_path_once() {
   local file="$1"
   local marker="$2"
@@ -13,18 +25,13 @@ append_path_once() {
   touch "$file"
 
   if ! grep -q "$marker" "$file"; then
-    cat <<EOF >> "$file"
+    cat <<'EOF' >> "$file"
 
-# $marker
-export PATH="\$HOME/.npm-global/bin:\$HOME/.local/bin:\$HOME/bin:\$PATH"
+# Codespaces classroom tools path
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:/usr/local/bin:$PATH"
 EOF
   fi
 }
-
-export DEBIAN_FRONTEND=noninteractive
-export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:$PATH"
-
-mkdir -p "$HOME/.npm-global" "$HOME/.local/bin" "$HOME/bin"
 
 append_path_once "$HOME/.bashrc" "Codespaces classroom tools path"
 append_path_once "$HOME/.profile" "Codespaces classroom tools path"
@@ -51,37 +58,62 @@ fi
 
 log "Installing Antigravity CLI"
 
-if ! command -v agy >/dev/null 2>&1; then
-  curl -fsSL https://antigravity.google/cli/install.sh | bash
-fi
+install_antigravity_cli() {
+  local before_path
+  before_path="$(command -v agy || true)"
 
-export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:$PATH"
-hash -r || true
+  if [ -z "$before_path" ]; then
+    local tmpdir
+    tmpdir="$(mktemp -d)"
 
-if ! command -v agy >/dev/null 2>&1; then
-  FOUND_AGY="$(find "$HOME" -type f -name agy 2>/dev/null | head -n 1 || true)"
-
-  if [ -n "$FOUND_AGY" ]; then
-    chmod +x "$FOUND_AGY" || true
-    ln -sf "$FOUND_AGY" "$HOME/.local/bin/agy"
-    export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:$PATH"
-    hash -r || true
+    curl -fsSL https://antigravity.google/cli/install.sh -o "$tmpdir/install-antigravity.sh"
+    bash "$tmpdir/install-antigravity.sh"
   fi
-fi
 
-if command -v agy >/dev/null 2>&1; then
-  echo "Antigravity CLI found at: $(command -v agy)"
-else
-  echo "WARNING: Antigravity CLI installer ran, but agy was not found on PATH."
-  echo "Try opening a new terminal, then run:"
-  echo "  find \$HOME -type f -name agy 2>/dev/null"
-fi
+  export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:/usr/local/bin:$PATH"
+  hash -r || true
+
+  local agy_bin
+  agy_bin="$(command -v agy || true)"
+
+  if [ -z "$agy_bin" ]; then
+    agy_bin="$(
+      find "$HOME" "$WORKSPACE_DIR" -type f -name agy 2>/dev/null | head -n 1 || true
+    )"
+  fi
+
+  if [ -z "$agy_bin" ]; then
+    echo "ERROR: agy binary was not found after installation."
+    echo "Searched:"
+    echo "  $HOME"
+    echo "  $WORKSPACE_DIR"
+    return 1
+  fi
+
+  chmod +x "$agy_bin" || true
+
+  # ここが重要。
+  # agyをユーザーPATHや作業ディレクトリ依存にせず、必ず /usr/local/bin/agy に固定する。
+  sudo ln -sf "$agy_bin" /usr/local/bin/agy
+  sudo chmod +x /usr/local/bin/agy
+
+  hash -r || true
+
+  if ! command -v agy >/dev/null 2>&1; then
+    echo "ERROR: /usr/local/bin/agy was created, but agy is still not available."
+    return 1
+  fi
+
+  echo "Antigravity CLI available as: $(command -v agy)"
+}
+
+install_antigravity_cli
 
 log "Setting up Python tools"
 
 python3 -m pip install --user --upgrade pip pipx
 
-export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:$PATH"
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:/usr/local/bin:$PATH"
 
 python3 -m pipx ensurepath || true
 
@@ -105,7 +137,7 @@ log "Setting up Node / TypeScript tools"
 
 npm config set prefix "$HOME/.npm-global"
 
-export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:$PATH"
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:/usr/local/bin:$PATH"
 
 npm install -g \
   pnpm \
@@ -153,15 +185,10 @@ vitest --version || true
 
 echo
 echo "--- Antigravity CLI ---"
-if command -v agy >/dev/null 2>&1; then
-  echo "agy path: $(command -v agy)"
-  agy --help | head -n 20 || true
-else
-  echo "agy not found"
-fi
+echo "agy path: $(command -v agy)"
+agy --help | head -n 20 || true
 
 log "Setup complete"
 
-echo "Open a new terminal if PATH changes are not reflected."
-echo "To start Antigravity CLI, run:"
+echo "Antigravity CLI is now available from any directory:"
 echo "  agy"
