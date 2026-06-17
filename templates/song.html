@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ song.title }}の歌詞考察{% endblock %}
+
+{% block content %}
+<div class="song-container fade-in">
+    <div class="breadcrumb">
+        <a href="{{ url_for('index') }}" class="breadcrumb-link"><i class="fa-solid fa-house"></i> ホーム</a>
+        <i class="fa-solid fa-chevron-right breadcrumb-separator"></i>
+        <span class="breadcrumb-current">{{ song.title }}</span>
+    </div>
+
+    <!-- 曲ヘッダー -->
+    <div class="card song-detail-card mb-6">
+        <div class="song-detail-grid">
+            <!-- 動画 / アートワーク -->
+            <div class="video-wrapper">
+                {% if song.youtube_url %}
+                    <div class="iframe-container">
+                        <iframe src="{{ song.youtube_url }}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    </div>
+                {% else %}
+                    <div class="no-video">
+                        <i class="fa-solid fa-circle-play no-video-icon"></i>
+                        <span>No Video Available</span>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- 曲説明 -->
+            <div class="song-detail-info">
+                <span class="album-badge"><i class="fa-solid fa-record-vinyl"></i> {{ song.album }}</span>
+                <h1 class="song-title-main">{{ song.title }}</h1>
+                <p class="song-release-info">リリース: {{ song.release_year }}年</p>
+                <div class="divider"></div>
+                <p class="song-description-text">{{ song.description }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-layout mt-6">
+        <!-- 左側：考察リスト -->
+        <div class="interpretations-section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fa-solid fa-quote-left text-gradient"></i> INTERPRETATIONS</h2>
+                <p class="section-subtitle">ファンが投稿した歌詞考察の一覧です。</p>
+            </div>
+
+            {% if interpretations %}
+                <div class="interpretations-list">
+                    {% for interp in interpretations %}
+                        <div class="card interpretation-card" id="interp-{{ interp.id }}">
+                            <div class="interp-header">
+                                <span class="interp-contributor"><i class="fa-regular fa-user"></i> {{ interp.contributor }}</span>
+                                <span class="interp-date">{{ interp.created_at[:16] }}</span>
+                            </div>
+                            <div class="interp-body">
+                                <h3 class="interp-phrase">“ {{ interp.section_title }} ”</h3>
+                                <p class="interp-content">{{ interp.content | replace('\n', '<br>') | safe }}</p>
+                            </div>
+                            <div class="interp-footer">
+                                <button class="btn btn-outline btn-sm like-button" data-id="{{ interp.id }}">
+                                    <i class="fa-solid fa-heart text-accent"></i> 
+                                    共感した (<span class="like-count">{{ interp.likes }}</span>)
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-data">
+                    <i class="fa-solid fa-comments no-data-icon"></i>
+                    <p class="no-data-text">まだこの曲に対する考察がありません。あなたが最初の考察を投稿してみませんか？</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 右側：新規考察投稿フォーム -->
+        <div class="post-form-section">
+            <div class="card post-card">
+                <div class="card-header-post">
+                    <h3 class="post-card-title"><i class="fa-solid fa-pen-fancy"></i> 考察を投稿する</h3>
+                    <p class="post-card-subtitle">あなたが感じる歌詞の意味や、この曲への思い入れを投稿してください。</p>
+                </div>
+                
+                <div class="card-body">
+                    <form action="{{ url_for('add_interpretation', song_id=song.id) }}" method="POST" class="post-form">
+                        <div class="form-group">
+                            <label for="contributor" class="form-label">ニックネーム</label>
+                            <input type="text" id="contributor" name="contributor" class="form-control" placeholder="例: OORer_Taka">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="section_title" class="form-label">考察対象のフレーズ・歌詞 <span class="required">*</span></label>
+                            <input type="text" id="section_title" name="section_title" class="form-control" placeholder="例: サビの「Wherever you are...」の部分" required>
+                            <small class="form-help">どの部分の歌詞について考察するかを入力してください。</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="content" class="form-label">考察内容 <span class="required">*</span></label>
+                            <textarea id="content" name="content" class="form-control" rows="6" placeholder="例: ここには、どれほど離れていても最愛の人のために生きるという誓いが込められていると感じます..." required></textarea>
+                            <small class="form-help">自由な発想で熱い考察をお書きください。</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-gradient btn-block">
+                            考察を投稿する <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}診断ジェネレーター{% endblock %} | 診断メーカー</title>
-    <!-- Google Fonts: Inter & Noto Sans JP -->
+    <title>{% block title %}ONE OK ROCK 歌詞考察コミュニティ{% endblock %} | OORer's Interpretation</title>
+    <!-- Google Fonts: Syncopate (for rock title) & Noto Sans JP -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-    <!-- FontAwesome for icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -17,12 +17,12 @@
     <header class="header">
         <div class="header-container">
             <a href="{{ url_for('index') }}" class="logo">
-                <i class="fa-solid fa-wand-magic-sparkles logo-icon"></i>
-                <span class="logo-text">Shindan<span class="logo-highlight">Maker</span></span>
+                <i class="fa-solid fa-guitar logo-icon"></i>
+                <span class="logo-text">OOR<span class="logo-highlight">LYRICS</span></span>
             </a>
             <nav class="nav">
-                <a href="{{ url_for('index') }}" class="nav-link"><i class="fa-solid fa-house"></i> ホーム</a>
-                <a href="{{ url_for('create_shindan') }}" class="btn btn-primary btn-sm nav-btn"><i class="fa-solid fa-plus"></i> 診断を作る</a>
+                <a href="{{ url_for('index') }}" class="nav-link"><i class="fa-solid fa-music"></i> 楽曲一覧</a>
+                <a href="https://www.oneokrock.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><i class="fa-solid fa-globe"></i> 公式サイト <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.75rem;"></i></a>
             </nav>
         </div>
     </header>
@@ -35,7 +35,7 @@
                     <div class="flash-messages">
                         {% for category, message in messages %}
                             <div class="flash-message flash-{{ category }} fade-in">
-                                <span class="flash-text">{{ message }}</span>
+                                <span class="flash-text"><i class="fa-solid fa-circle-info"></i> {{ message }}</span>
                                 <button class="flash-close-btn" onclick="this.parentElement.remove();">&times;</button>
                             </div>
                         {% endfor %}
@@ -49,10 +49,9 @@
 
     <footer class="footer">
         <div class="footer-container">
-            <p class="footer-text">&copy; 2026 ShindanMaker. All rights reserved.</p>
+            <p class="footer-text">&copy; 2026 OOR Lyrics Analysis. Created for ONE OK ROCK Fans.</p>
             <div class="footer-links">
-                <a href="{{ url_for('index') }}" class="footer-link">ホーム</a>
-                <a href="{{ url_for('create_shindan') }}" class="footer-link">診断を作る</a>
+                <a href="{{ url_for('index') }}" class="footer-link">楽曲一覧</a>
             </div>
         </div>
     </footer>

@@ -1,47 +1,93 @@
 {% extends 'base.html' %}
 
-{% block title %}おもしろ診断・性格占いジェネレーター{% endblock %}
+{% block title %}ONE OK ROCK 歌詞考察コミュニティ - ホーム{% endblock %}
 
 {% block content %}
 <section class="hero fade-in">
     <div class="hero-content">
-        <h1 class="hero-title">日常に少しのワクワクと笑いを。</h1>
-        <p class="hero-subtitle">名前を入力するだけで、あなたや友達の意外な一面や運勢を即座に診断します。オリジナルの診断も簡単に作成可能！</p>
-        <div class="hero-actions">
-            <a href="{{ url_for('create_shindan') }}" class="btn btn-gradient btn-lg"><i class="fa-solid fa-magic"></i> 新しい診断を作る</a>
-            <a href="#shindan-list" class="btn btn-secondary btn-lg"><i class="fa-solid fa-list"></i> 診断をさがす</a>
+        <h1 class="hero-title rock-font">WE ARE ONE OK ROCK FANS.</h1>
+        <p class="hero-subtitle">心に刺さるメロディと、魂を揺さぶる言葉たち。ONE OK ROCKの楽曲に込められた本当の意味やメッセージを、みんなで考察し共有し合うコミュニティサイトです。</p>
+        
+        <!-- 検索フォーム -->
+        <form action="{{ url_for('index') }}" method="GET" class="search-form">
+            <div class="input-with-icon">
+                <i class="fa-solid fa-magnifying-glass input-icon"></i>
+                <input type="text" name="q" class="form-control form-control-lg search-input" placeholder="曲名やアルバム名で検索..." value="{{ search_query }}">
+            </div>
+            <button type="submit" class="btn btn-gradient btn-lg search-btn">検索</button>
+            {% if search_query %}
+                <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">リセット</a>
+            {% endif %}
+        </form>
+    </div>
+</section>
+
+<div class="main-layout fade-in">
+    <!-- 左側：楽曲一覧 -->
+    <div class="songs-section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fa-solid fa-compact-disc text-gradient"></i> TRACKS</h2>
+            <p class="section-subtitle">考察対象の楽曲一覧です。曲を選択して考察を読んだり、あなたの考察を投稿しましょう。</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% if songs %}
+                {% for song in songs %}
+                    <div class="card song-card">
+                        <div class="card-body">
+                            <div class="song-meta">
+                                <span class="album-badge"><i class="fa-solid fa-record-vinyl"></i> {{ song.album }}</span>
+                                <span class="release-year">{{ song.release_year }}年</span>
+                            </div>
+                            <h3 class="song-title-heading">{{ song.title }}</h3>
+                            <p class="song-desc-preview">{{ song.description }}</p>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{{ url_for('song_detail', song_id=song.id) }}" class="btn btn-gradient btn-sm btn-block">
+                                歌詞と考察を見る <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">
+                    <i class="fa-solid fa-circle-info no-data-icon"></i>
+                    <p class="no-data-text">お探しの楽曲が見つかりませんでした。</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline">すべての楽曲を表示</a>
+                </div>
+            {% endif %}
         </div>
     </div>
-</section>
 
-<section id="shindan-list" class="shindan-section fade-in">
-    <div class="section-header">
-        <h2 class="section-title"><i class="fa-solid fa-fire text-gradient"></i> 人気・新着の診断</h2>
-        <p class="section-subtitle">今すぐ遊べる診断リストです。気になる診断を選んでみましょう！</p>
-    </div>
+    <!-- 右側：最新の考察フィード -->
+    <div class="sidebar-section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fa-solid fa-comments text-gradient"></i> LATEST FEED</h2>
+            <p class="section-subtitle">最近投稿された熱い考察です。</p>
+        </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% if shindans %}
-            {% for shindan in shindans %}
-                <div class="card shindan-card fade-in">
-                    <div class="card-body">
-                        <span class="card-badge">HOT</span>
-                        <h3 class="card-title">{{ shindan.title }}</h3>
-                        <p class="card-description">{{ shindan.description }}</p>
+        <div class="latest-list">
+            {% if latest_interpretations %}
+                {% for interp in latest_interpretations %}
+                    <div class="card latest-card">
+                        <div class="latest-card-header">
+                            <span class="latest-song-title">{{ interp.song_title }}</span>
+                            <span class="latest-likes"><i class="fa-solid fa-heart text-accent"></i> {{ interp.likes }}</span>
+                        </div>
+                        <div class="latest-card-body">
+                            <h4 class="latest-phrase">“ {{ interp.section_title }} ”</h4>
+                            <p class="latest-content">{{ interp.content }}</p>
+                        </div>
+                        <div class="latest-card-footer">
+                            <span class="latest-author"><i class="fa-regular fa-user"></i> {{ interp.contributor }}</span>
+                            <a href="{{ url_for('song_detail', song_id=interp.song_id) }}" class="btn btn-link btn-xs">元曲へ <i class="fa-solid fa-arrow-right"></i></a>
+                        </div>
                     </div>
-                    <div class="card-footer">
-                        <span class="card-date"><i class="fa-regular fa-clock"></i> {{ shindan.created_at[:10] }}</span>
-                        <a href="{{ url_for('shindan_detail', shindan_id=shindan.id) }}" class="btn btn-outline btn-sm">診断する <i class="fa-solid fa-chevron-right"></i></a>
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <div class="no-data">
-                <i class="fa-solid fa-circle-info no-data-icon"></i>
-                <p class="no-data-text">診断がまだありません。最初の診断を作ってみませんか？</p>
-                <a href="{{ url_for('create_shindan') }}" class="btn btn-primary">診断を作成する</a>
-            </div>
-        {% endif %}
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">投稿された考察はまだありません。</p>
+            {% endif %}
+        </div>
     </div>
-</section>
+</div>
 {% endblock %}

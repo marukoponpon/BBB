@@ -1,117 +1,111 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import sqlite3
-import hashlib
 
 app = Flask(__name__)
-app.secret_key = 'shindanmaker_secret_key'  # 簡易的なセッション・フラッシュメッセージ用
-DATABASE = 'shindan.db'
+app.secret_key = 'oneokrock_lyrics_key'
+DATABASE = 'lyrics.db'
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row  # 辞書ライクにアクセスできるようにする
+    conn.row_factory = sqlite3.Row
     return conn
-
-# 名前から決定論的なインデックスを生成する関数
-def get_deterministic_index(name, max_val):
-    # 名前をMD5でハッシュ化
-    hasher = hashlib.md5(name.encode('utf-8'))
-    # ハッシュ値（16進数文字列）の整数表現を取得
-    hash_int = int(hasher.hexdigest(), 16)
-    return hash_int % max_val
 
 @app.route('/')
 def index():
+    search_query = request.args.get('q', '').strip()
     conn = get_db()
     cursor = conn.cursor()
-    # 最新の診断から順に取得
-    cursor.execute('SELECT id, title, description, created_at FROM shindans ORDER BY id DESC')
-    shindans = cursor.fetchall()
-    conn.close()
-    return render_template('index.html', shindans=shindans)
-
-@app.route('/shindan/<int:shindan_id>', methods=['GET', 'POST'])
-def shindan_detail(shindan_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM shindans WHERE id = ?', (shindan_id,))
-    shindan = cursor.fetchone()
-    conn.close()
-
-    if not shindan:
-        flash('指定された診断が見つかりませんでした。', 'error')
-        return redirect(url_for('index'))
-
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        if not name:
-            flash('名前を入力してください。', 'warning')
-            return redirect(url_for('shindan_detail', shindan_id=shindan_id))
-        # 結果表示画面へリダイレクト（クエリパラメータで名前を渡す）
-        return redirect(url_for('shindan_result', shindan_id=shindan_id, name=name))
-
-    return render_template('shindan.html', shindan=shindan)
-
-@app.route('/shindan/<int:shindan_id>/result')
-def shindan_result(shindan_id):
-    name = request.args.get('name', '').strip()
-    if not name:
-        flash('名前を入力してください。', 'warning')
-        return redirect(url_for('shindan_detail', shindan_id=shindan_id))
-
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM shindans WHERE id = ?', (shindan_id,))
-    shindan = cursor.fetchone()
-    conn.close()
-
-    if not shindan:
-        flash('指定された診断が見つかりませんでした。', 'error')
-        return redirect(url_for('index'))
-
-    # 結果テキストをパース（改行区切り）
-    results_list = [r.strip() for r in shindan['results'].split('\n') if r.strip()]
-    if not results_list:
-        result_text = "診断結果のパターンが設定されていません。"
-    else:
-        # 名前から決定された結果を選択
-        idx = get_deterministic_index(name, len(results_list))
-        selected_pattern = results_list[idx]
-        # [name]プレースホルダーを入力された名前に置き換える
-        result_text = selected_pattern.replace('[name]', name)
-
-    return render_template('result.html', shindan=shindan, name=name, result_text=result_text)
-
-@app.route('/create', methods=['GET', 'POST'])
-def create_shindan():
-    if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        description = request.form.get('description', '').strip()
-        results = request.form.get('results', '').strip()
-
-        if not title or not description or not results:
-            flash('すべての項目を入力してください。', 'error')
-            return render_template('create.html', title=title, description=description, results=results)
-
-        # 最低2つの結果パターンを要求
-        results_list = [r.strip() for r in results.split('\n') if r.strip()]
-        if len(results_list) < 2:
-            flash('診断結果は改行で区切って、最低2パターン以上入力してください。', 'error')
-            return render_template('create.html', title=title, description=description, results=results)
-
-        conn = get_db()
-        cursor = conn.cursor()
+    
+    # 曲の検索または全取得
+    if search_query:
         cursor.execute(
-            'INSERT INTO shindans (title, description, results) VALUES (?, ?, ?)',
-            (title, description, results)
+            'SELECT * FROM songs WHERE title LIKE ? OR album LIKE ? ORDER BY release_year DESC',
+            (f'%{search_query}%', f'%{search_query}%')
         )
-        conn.commit()
-        new_id = cursor.lastrowid
+    else:
+        cursor.execute('SELECT * FROM songs ORDER BY release_year DESC')
+    songs = cursor.fetchall()
+    
+    # 最新の考察を取得（最大5件）
+    cursor.execute('''
+        SELECT i.*, s.title as song_title 
+        FROM interpretations i 
+        JOIN songs s ON i.song_id = s.id 
+        ORDER BY i.created_at DESC 
+        LIMIT 5
+    ''')
+    latest_interpretations = cursor.fetchall()
+    
+    conn.close()
+    return render_template('index.html', songs=songs, latest_interpretations=latest_interpretations, search_query=search_query)
+
+@app.route('/song/<int:song_id>', methods=['GET'])
+def song_detail(song_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # 曲情報を取得
+    cursor.execute('SELECT * FROM songs WHERE id = ?', (song_id,))
+    song = cursor.fetchone()
+    
+    if not song:
         conn.close()
+        flash('指定された楽曲が見つかりませんでした。', 'error')
+        return redirect(url_for('index'))
+        
+    # この曲に対する考察を取得（いいね数順、同じなら新しい順）
+    cursor.execute(
+        'SELECT * FROM interpretations WHERE song_id = ? ORDER BY likes DESC, created_at DESC',
+        (song_id,)
+    )
+    interpretations = cursor.fetchall()
+    conn.close()
+    
+    return render_template('song.html', song=song, interpretations=interpretations)
 
-        flash('診断を新しく作成しました！', 'success')
-        return redirect(url_for('shindan_detail', shindan_id=new_id))
+@app.route('/song/<int:song_id>/interpret', methods=['POST'])
+def add_interpretation(song_id):
+    contributor = request.form.get('contributor', '').strip() or '匿名OORer'
+    section_title = request.form.get('section_title', '').strip()
+    content = request.form.get('content', '').strip()
+    
+    if not section_title or not content:
+        flash('考察対象のフレーズと考察内容は必須です。', 'error')
+        return redirect(url_for('song_detail', song_id=song_id))
+        
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        'INSERT INTO interpretations (song_id, contributor, section_title, content) VALUES (?, ?, ?, ?)',
+        (song_id, contributor, section_title, content)
+    )
+    conn.commit()
+    conn.close()
+    
+    flash('歌詞考察を投稿しました！熱い考察をありがとうございます。', 'success')
+    return redirect(url_for('song_detail', song_id=song_id))
 
-    return render_template('create.html')
+# いいね！機能（非同期API用）
+@app.route('/interpretation/<int:interpret_id>/like', methods=['POST'])
+def like_interpretation(interpret_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # 存在確認
+    cursor.execute('SELECT likes FROM interpretations WHERE id = ?', (interpret_id,))
+    row = cursor.fetchone()
+    
+    if not row:
+        conn.close()
+        return jsonify({'success': False, 'message': '考察が見つかりませんでした。'}), 404
+        
+    new_likes = row['likes'] + 1
+    cursor.execute('UPDATE interpretations SET likes = ? WHERE id = ?', (new_likes, interpret_id))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True, 'likes': new_likes})
 
 if __name__ == '__main__':
+    # ポート5000で起動
     app.run(debug=True, host='0.0.0.0', port=5000)
