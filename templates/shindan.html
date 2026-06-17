@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ shindan.title }}{% endblock %}
+
+{% block content %}
+<div class="shindan-container fade-in">
+    <div class="breadcrumb">
+        <a href="{{ url_for('index') }}" class="breadcrumb-link"><i class="fa-solid fa-house"></i> ホーム</a>
+        <i class="fa-solid fa-chevron-right breadcrumb-separator"></i>
+        <span class="breadcrumb-current">{{ shindan.title }}</span>
+    </div>
+
+    <div class="card detail-card">
+        <div class="detail-header">
+            <span class="detail-tag"><i class="fa-solid fa-star"></i> 診断</span>
+            <h1 class="detail-title">{{ shindan.title }}</h1>
+            <p class="detail-description">{{ shindan.description }}</p>
+        </div>
+        
+        <div class="detail-body">
+            <form action="{{ url_for('shindan_detail', shindan_id=shindan.id) }}" method="POST" class="shindan-form">
+                <div class="form-group">
+                    <label for="name" class="form-label">あなたの名前を入力してください</label>
+                    <div class="input-with-icon">
+                        <i class="fa-regular fa-user input-icon"></i>
+                        <input type="text" id="name" name="name" class="form-control form-control-lg" placeholder="例: ひろし" required autocomplete="off" autofocus>
+                    </div>
+                    <small class="form-help">同じ名前を入力すると、常に同じ診断結果になります。</small>
+                </div>
+                
+                <button type="submit" class="btn btn-gradient btn-lg btn-block btn-shindan">
+                    <span>診断する</span> <i class="fa-solid fa-wand-magic-sparkles animate-pulse"></i>
+                </button>
+            </form>
+        </div>
+        
+        <div class="detail-footer">
+            <div class="share-info">
+                <span><i class="fa-regular fa-calendar-days"></i> 作成日: {{ shindan.created_at[:10] }}</span>
+            </div>
+            <a href="{{ url_for('index') }}" class="btn btn-link"><i class="fa-solid fa-arrow-left"></i> 戻る</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

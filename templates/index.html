@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}おもしろ診断・性格占いジェネレーター{% endblock %}
+
+{% block content %}
+<section class="hero fade-in">
+    <div class="hero-content">
+        <h1 class="hero-title">日常に少しのワクワクと笑いを。</h1>
+        <p class="hero-subtitle">名前を入力するだけで、あなたや友達の意外な一面や運勢を即座に診断します。オリジナルの診断も簡単に作成可能！</p>
+        <div class="hero-actions">
+            <a href="{{ url_for('create_shindan') }}" class="btn btn-gradient btn-lg"><i class="fa-solid fa-magic"></i> 新しい診断を作る</a>
+            <a href="#shindan-list" class="btn btn-secondary btn-lg"><i class="fa-solid fa-list"></i> 診断をさがす</a>
+        </div>
+    </div>
+</section>
+
+<section id="shindan-list" class="shindan-section fade-in">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fa-solid fa-fire text-gradient"></i> 人気・新着の診断</h2>
+        <p class="section-subtitle">今すぐ遊べる診断リストです。気になる診断を選んでみましょう！</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% if shindans %}
+            {% for shindan in shindans %}
+                <div class="card shindan-card fade-in">
+                    <div class="card-body">
+                        <span class="card-badge">HOT</span>
+                        <h3 class="card-title">{{ shindan.title }}</h3>
+                        <p class="card-description">{{ shindan.description }}</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="card-date"><i class="fa-regular fa-clock"></i> {{ shindan.created_at[:10] }}</span>
+                        <a href="{{ url_for('shindan_detail', shindan_id=shindan.id) }}" class="btn btn-outline btn-sm">診断する <i class="fa-solid fa-chevron-right"></i></a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-data">
+                <i class="fa-solid fa-circle-info no-data-icon"></i>
+                <p class="no-data-text">診断がまだありません。最初の診断を作ってみませんか？</p>
+                <a href="{{ url_for('create_shindan') }}" class="btn btn-primary">診断を作成する</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

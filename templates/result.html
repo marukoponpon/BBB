@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ name }}の{{ shindan.title }}の結果{% endblock %}
+
+{% block content %}
+<div class="result-container fade-in">
+    <div class="breadcrumb">
+        <a href="{{ url_for('index') }}" class="breadcrumb-link"><i class="fa-solid fa-house"></i> ホーム</a>
+        <i class="fa-solid fa-chevron-right breadcrumb-separator"></i>
+        <a href="{{ url_for('shindan_detail', shindan_id=shindan.id) }}" class="breadcrumb-link">{{ shindan.title }}</a>
+        <i class="fa-solid fa-chevron-right breadcrumb-separator"></i>
+        <span class="breadcrumb-current">診断結果</span>
+    </div>
+
+    <div class="card result-card">
+        <div class="result-header">
+            <span class="result-badge"><i class="fa-solid fa-square-poll-vertical"></i> 診断結果</span>
+            <h1 class="result-title">{{ shindan.title }}</h1>
+            <p class="result-for">診断名: <span class="result-name">{{ name }}</span> さん</p>
+        </div>
+
+        <div class="result-body">
+            <!-- 結果表示ボード（ネオン／グラデーションの美しい枠線付き） -->
+            <div class="result-board" id="result-board">
+                <div class="result-board-glow"></div>
+                <div class="result-content-wrapper">
+                    <p class="result-text">{{ result_text | replace('\n', '<br>') | safe }}</p>
+                </div>
+            </div>
+            
+            <!-- アクションボタン群 -->
+            <div class="result-actions">
+                <button id="copy-btn" class="btn btn-secondary btn-lg" data-clipboard-text="{{ result_text }}">
+                    <i class="fa-regular fa-copy"></i> 結果をコピー
+                </button>
+                <button id="share-x-btn" class="btn btn-x btn-lg" 
+                        data-title="{{ shindan.title }}" 
+                        data-name="{{ name }}" 
+                        data-result="{{ result_text }}">
+                    <i class="fa-brands fa-x-twitter"></i> Xでポストする
+                </button>
+            </div>
+        </div>
+
+        <div class="result-footer">
+            <div class="retry-actions">
+                <a href="{{ url_for('shindan_detail', shindan_id=shindan.id) }}" class="btn btn-primary btn-lg">
+                    <i class="fa-solid fa-rotate-left"></i> 別名で診断する
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline btn-lg">
+                    <i class="fa-solid fa-house"></i> ホームに戻る
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

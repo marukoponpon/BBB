@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}新しい診断を作る{% endblock %}
+
+{% block content %}
+<div class="create-container fade-in">
+    <div class="breadcrumb">
+        <a href="{{ url_for('index') }}" class="breadcrumb-link"><i class="fa-solid fa-house"></i> ホーム</a>
+        <i class="fa-solid fa-chevron-right breadcrumb-separator"></i>
+        <span class="breadcrumb-current">診断を作る</span>
+    </div>
+
+    <div class="card create-card">
+        <div class="create-header">
+            <h1 class="create-title"><i class="fa-solid fa-plus-circle text-gradient"></i> 新しい診断を作る</h1>
+            <p class="create-subtitle">あなたのオリジナルの診断を作成して、みんなに遊んでもらいましょう！</p>
+        </div>
+
+        <div class="create-body">
+            <form action="{{ url_for('create_shindan') }}" method="POST" class="create-form">
+                <div class="form-group">
+                    <label for="title" class="form-label">診断のタイトル <span class="required">*</span></label>
+                    <input type="text" id="title" name="title" class="form-control" placeholder="例: あなたを漢字一文字で表すと？" value="{{ title or '' }}" required maxlength="100">
+                    <small class="form-help">ユーザーが興味を持つような、分かりやすいタイトルにしましょう。</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">診断の説明文 <span class="required">*</span></label>
+                    <textarea id="description" name="description" class="form-control" rows="3" placeholder="例: あなたの性格や深層心理から、あなたにぴったりの漢字一文字を診断します！" required maxlength="300">{{ description or '' }}</textarea>
+                    <small class="form-help">この診断がどんな内容なのかを説明してください。</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="results" class="form-label">診断結果パターン（1行につき1パターン） <span class="required">*</span></label>
+                    <textarea id="results" name="results" class="form-control font-mono" rows="8" placeholder="[name]を漢字一文字で表すと【優】です！周りの人を優しく包み込む力を持っています。&#10;[name]を漢字一文字で表すと【躍】です！常に挑戦を続け、飛躍し続けるアクティブな人です。&#10;[name]を漢字一文字で表すと【知】です！深い知識と鋭い観察力で、物事の本質を見抜きます。" required>{{ results or '' }}</textarea>
+                    
+                    <div class="info-box info-tips mt-2">
+                        <h4 class="info-box-title"><i class="fa-regular fa-lightbulb"></i> ヒントとルール</h4>
+                        <ul class="info-list">
+                            <li>結果パターンは<strong>1行に1つ</strong>記述してください。</li>
+                            <li><strong><code>[name]</code></strong> という文字列を記述すると、診断時にユーザーが入力した名前に自動的に置き換わります。</li>
+                            <li>診断結果のバリエーションを増やすため、<strong>最低2行（2パターン）以上</strong>入力してください。</li>
+                            <li>改行（Shift+Enter等）を含んだ複数行の結果パターンを作りたい場合は、今回のシンプルな改行区切り仕様上、1行で記述し、結果表示時に調整されるようにしてください。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-gradient btn-lg">
+                        <i class="fa-solid fa-paper-plane"></i> 診断を公開する
+                    </button>
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">キャンセル</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
